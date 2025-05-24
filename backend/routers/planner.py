@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
 from pydantic import BaseModel
 from uuid import uuid4
+import json
 import httpx
 import asyncio
-import json
 
 from backend.services.planning_agent import plan_project
 from backend.models.status_tracker import set_status, get_status
@@ -18,7 +18,6 @@ def initiate_project(req: PlanningRequest):
     project_id = str(uuid4())
     try:
         plan = plan_project(req.goal, project_id)
-        # Store as stringified JSON
         plan_str = json.dumps(plan) if isinstance(plan, dict) else plan
         set_status(project_id, "planning", "Plan generated", {"plan": plan_str})
         return {"project_id": project_id, "plan": plan}

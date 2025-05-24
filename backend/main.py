@@ -1,18 +1,9 @@
-# v1.3 - Add CORS, Prompt, and Planner routes
-"""
-Main entry point for the FastAPI application.
-Handles middleware, router registration, and root endpoint.
-"""
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from backend.routers import prompt
-from backend.routers import planner
+from backend.routers import prompt, planner
 
 app = FastAPI()
 
-# Allow WordPress frontend to call this API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://wordpress-1281112-5549543.cloudwaysapps.com"],
@@ -21,7 +12,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register routers
 app.include_router(prompt.router, prefix="/prompt", tags=["Prompt"])
 app.include_router(planner.router, prefix="/planner", tags=["Planner"])
 
