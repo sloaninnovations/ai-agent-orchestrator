@@ -1,5 +1,4 @@
-# File: backend/routers/planner.py
-
+# v1.1 - Planner routes: /initiate and /execute for autonomous builds
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
 from pydantic import BaseModel
 from uuid import uuid4
@@ -11,6 +10,22 @@ from backend.services.planning_agent import plan_project
 from backend.models.status_tracker import set_status, get_status
 
 router = APIRouter()
+
+class PlanningRequest(BaseModel):
+    goal: str
+
+@router.post("/initiate")
+def initiate_project(req: PlanningRequest):
+    project_id = str(uuid4())
+    try:
+        plan = plan_project(req.goal, project_id)
+        set_status(project_id, "planning", "Plan generated", {"plan": plan})
+        return {
+            "project_id": project_id,
+            "plan": plan
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/execute")
 async def execute_project(req: Request, bg: BackgroundTasks):
@@ -25,9 +40,11 @@ async def execute_project(req: Request, bg: BackgroundTasks):
         print("Raw plan_info:", plan_info)
         plan = json.loads(plan_info["data"]["plan"])
         milestones = plan.get("Milestones", [])
+
         bg.add_task(run_milestones, project_id, milestones)
         set_status(project_id, "executing", "Milestone build started")
         return {"project_id": project_id, "status": "started", "milestones": milestones}
+
     except Exception as e:
         import traceback
         print("Error during plan execution:", traceback.format_exc())
@@ -42,8 +59,8 @@ async def run_milestones(project_id: str, milestones: list):
                     "https://ai-agent-orchestrator.onrender.com/prompt",
                     json={"prompt": milestone}
                 )
-                _ = res.json()  # could validate structure
-                await asyncio.sleep(10)  # wait before next one
+                _ = res.json()  # could add validation
+                await asyncio.sleep(10)  # pacing
             except Exception as e:
                 set_status(project_id, "error", f"Failed at milestone {i+1}", {"error": str(e)})
                 return
