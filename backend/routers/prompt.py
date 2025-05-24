@@ -1,7 +1,7 @@
 # v1.1 - Uses code_generator to return mocked code files
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from services.code_generator import generate_code_project
+from backend.services.code_generator import generate_code_project
 
 router = APIRouter()
 
