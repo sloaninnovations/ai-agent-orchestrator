@@ -43,7 +43,11 @@ async def execute_project(req: Request, bg: BackgroundTasks):
         except Exception:
             plan = plan_raw  # fallback if already a dict
 
-        milestones = plan.get("Milestones", [])
+        milestones = (
+			plan.get("Milestones") or
+			plan.get("4. Milestones") or
+			[]
+		)
         if not milestones:
             raise HTTPException(status_code=400, detail="No milestones found in the plan.")
 
