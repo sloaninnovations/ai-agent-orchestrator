@@ -46,3 +46,14 @@ from backend.models.status_tracker import get_status
 @router.get("/status/{project_id}")
 def check_status(project_id: str = Path(..., title="Project ID")):
     return get_status(project_id)
+
+from fastapi.responses import FileResponse
+from backend.services.download_zip import create_zip_for_project
+
+@router.get("/download/{project_id}")
+def download_zip(project_id: str):
+    try:
+        zip_path = create_zip_for_project(project_id)
+        return FileResponse(zip_path, filename=f"{project_id}.zip", media_type="application/zip")
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
