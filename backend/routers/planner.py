@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from uuid import uuid4
 from backend.services.planning_agent import plan_project
-from backend.models.status_tracker import status_by_id
+from backend.models.status_tracker import set_status
 
 router = APIRouter()
 
@@ -15,11 +15,8 @@ def initiate_project(req: PlanningRequest):
     project_id = str(uuid4())
     try:
         plan = plan_project(req.goal, project_id)
-        status_by_id[project_id] = {
-            "stage": "planning",
-            "message": "Plan generated",
-            "plan": plan
-        }
+		set_status(project_id, "planning", "Plan generated", {"plan": plan})
+
         return {
             "project_id": project_id,
             "plan": plan
