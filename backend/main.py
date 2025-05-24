@@ -1,6 +1,12 @@
 # v1.3 - Add CORS, Prompt, and Planner routes
+"""
+Main entry point for the FastAPI application.
+Handles middleware, router registration, and root endpoint.
+"""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from backend.routers import prompt
 from backend.routers import planner
 
@@ -15,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register the /prompt and /planner endpoints
+# Register routers
 app.include_router(prompt.router, prefix="/prompt", tags=["Prompt"])
 app.include_router(planner.router, prefix="/planner", tags=["Planner"])
 
