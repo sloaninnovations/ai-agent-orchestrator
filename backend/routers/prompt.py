@@ -39,3 +39,10 @@ def submit_prompt(data: PromptRequest):
     except Exception as e:
         set_status(project_id, "error", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
+from fastapi import Path
+from backend.models.status_tracker import get_status
+
+@router.get("/status/{project_id}")
+def check_status(project_id: str = Path(..., title="Project ID")):
+    return get_status(project_id)
