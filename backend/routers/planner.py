@@ -15,8 +15,7 @@ def initiate_project(req: PlanningRequest):
     project_id = str(uuid4())
     try:
         plan = plan_project(req.goal, project_id)
-		set_status(project_id, "planning", "Plan generated", {"plan": plan})
-
+        set_status(project_id, "planning", "Plan generated", {"plan": plan})
         return {
             "project_id": project_id,
             "plan": plan
