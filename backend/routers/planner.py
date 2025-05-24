@@ -22,14 +22,15 @@ async def execute_project(req: Request, bg: BackgroundTasks):
         raise HTTPException(status_code=404, detail="Plan not found")
 
     try:
+        print("Raw plan_info:", plan_info)
         plan = json.loads(plan_info["data"]["plan"])
         milestones = plan.get("Milestones", [])
-
         bg.add_task(run_milestones, project_id, milestones)
         set_status(project_id, "executing", "Milestone build started")
         return {"project_id": project_id, "status": "started", "milestones": milestones}
-
     except Exception as e:
+        import traceback
+        print("Error during plan execution:", traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 async def run_milestones(project_id: str, milestones: list):
