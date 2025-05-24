@@ -1,7 +1,8 @@
-# v1.2 - Add CORS for WordPress domain + prompt router
+# v1.3 - Add CORS, Prompt, and Planner routes
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.routers import prompt
+from backend.routers import planner
 
 app = FastAPI()
 
@@ -14,8 +15,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register the /prompt endpoint
+# Register the /prompt and /planner endpoints
 app.include_router(prompt.router, prefix="/prompt", tags=["Prompt"])
+app.include_router(planner.router, prefix="/planner", tags=["Planner"])
 
 @app.get("/")
 def root():
