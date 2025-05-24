@@ -1,5 +1,7 @@
-# v1.0 - LLM agent to generate project milestones and architecture
-import openai
+# v1.1 - Updated for OpenAI SDK v1.x
+from openai import OpenAI
+
+client = OpenAI()
 
 def plan_project(goal: str, project_id: str):
     system = "You're an expert software architect helping non-technical users build apps."
@@ -14,10 +16,12 @@ def plan_project(goal: str, project_id: str):
     Respond in JSON.
     """
 
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4",
-        messages=[{"role": "system", "content": system},
-                  {"role": "user", "content": user}],
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user}
+        ],
         temperature=0.7
     )
 
