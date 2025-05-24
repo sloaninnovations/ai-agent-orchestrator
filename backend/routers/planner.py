@@ -10,7 +10,7 @@ router = APIRouter()
 class PlanningRequest(BaseModel):
     goal: str
 
-@router.post("/planner/initiate")
+@router.post("/initiate")
 def initiate_project(req: PlanningRequest):
     project_id = str(uuid4())
     try:
