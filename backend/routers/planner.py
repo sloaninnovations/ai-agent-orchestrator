@@ -1,10 +1,16 @@
 # File: backend/routers/planner.py
 
-from fastapi import BackgroundTasks, Request
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
+from pydantic import BaseModel
+from uuid import uuid4
 import httpx
 import asyncio
 import json
-from backend.models.status_tracker import get_status
+
+from backend.services.planning_agent import plan_project
+from backend.models.status_tracker import set_status, get_status
+
+router = APIRouter()
 
 @router.post("/execute")
 async def execute_project(req: Request, bg: BackgroundTasks):
