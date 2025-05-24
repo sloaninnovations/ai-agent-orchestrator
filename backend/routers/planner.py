@@ -38,16 +38,19 @@ async def execute_project(req: Request, bg: BackgroundTasks):
         if not plan_raw:
             raise HTTPException(status_code=404, detail="Plan not found for the given project_id.")
 
-        try:
-            plan = json.loads(plan_raw)
-        except Exception:
-            plan = plan_raw  # fallback if already a dict
+		try:
+			plan = json.loads(plan_raw)
+		except Exception:
+			plan = plan_raw if isinstance(plan_raw, dict) else {}
 
-        milestones = (
-			plan.get("Milestones") or
-			plan.get("4. Milestones") or
-			[]
-		)
+		# Extract milestones using flexible matching
+		milestones = []
+		for key in plan:
+			if "milestone" in key.lower():
+				if isinstance(plan[key], list):
+					milestones = plan[key]
+					break
+
         if not milestones:
             raise HTTPException(status_code=400, detail="No milestones found in the plan.")
 
