@@ -1,15 +1,16 @@
-# v1.1 - Planner routes: /initiate and /execute for autonomous builds
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
 from pydantic import BaseModel
 from uuid import uuid4
 import httpx
 import asyncio
 import json
+import logging
 
 from backend.services.planning_agent import plan_project
 from backend.models.status_tracker import set_status, get_status
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 class PlanningRequest(BaseModel):
     goal: str
@@ -25,30 +26,36 @@ def initiate_project(req: PlanningRequest):
             "plan": plan
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error in initiate_project: {e}")
+        raise HTTPException(status_code=500, detail="Failed to initiate project.")
 
 @router.post("/execute")
 async def execute_project(req: Request, bg: BackgroundTasks):
-    body = await req.json()
-    project_id = body["project_id"]
-    plan_info = get_status(project_id)
-
-    if not plan_info["data"] or "plan" not in plan_info["data"]:
-        raise HTTPException(status_code=404, detail="Plan not found")
-
     try:
-        print("Raw plan_info:", plan_info)
+        body = await req.json()
+        project_id = body.get("project_id")
+        if not project_id:
+            raise HTTPException(status_code=400, detail="Missing 'project_id' in request body.")
+
+        plan_info = get_status(project_id)
+        if not plan_info or "data" not in plan_info or "plan" not in plan_info["data"]:
+            raise HTTPException(status_code=404, detail="Plan not found for the given project_id.")
+
         plan = json.loads(plan_info["data"]["plan"])
         milestones = plan.get("Milestones", [])
+        if not milestones:
+            raise HTTPException(status_code=400, detail="No milestones found in the plan.")
 
         bg.add_task(run_milestones, project_id, milestones)
         set_status(project_id, "executing", "Milestone build started")
         return {"project_id": project_id, "status": "started", "milestones": milestones}
 
+    except HTTPException as http_exc:
+        logger.error(f"HTTPException in execute_project: {http_exc.detail}")
+        raise http_exc
     except Exception as e:
-        import traceback
-        print("Error during plan execution:", traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Unexpected error in execute_project: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error.")
 
 async def run_milestones(project_id: str, milestones: list):
     async with httpx.AsyncClient() as client:
@@ -59,10 +66,11 @@ async def run_milestones(project_id: str, milestones: list):
                     "https://ai-agent-orchestrator.onrender.com/prompt",
                     json={"prompt": milestone}
                 )
-                _ = res.json()  # could add validation
+                res.raise_for_status()
                 await asyncio.sleep(10)  # pacing
             except Exception as e:
                 set_status(project_id, "error", f"Failed at milestone {i+1}", {"error": str(e)})
+                logger.error(f"Error in run_milestones at milestone {i+1}: {e}")
                 return
 
     set_status(project_id, "complete", "All milestones generated")
