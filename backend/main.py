@@ -1,6 +1,7 @@
 # v1.1 - Registering prompt router
 from fastapi import FastAPI
-from routers import prompt
+from backend.routers import prompt
+
 
 app = FastAPI()
 
