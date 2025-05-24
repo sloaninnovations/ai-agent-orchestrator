@@ -1,7 +1,8 @@
-# v1.1 - Uses code_generator to return mocked code files
+# v2.0 - Integrate code generation with file saving
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from backend.services.code_generator import generate_code_project
+from backend.services.file_writer import save_project_files
 
 router = APIRouter()
 
@@ -12,6 +13,12 @@ class PromptRequest(BaseModel):
 def submit_prompt(data: PromptRequest):
     try:
         result = generate_code_project(data.prompt)
-        return result
+        path = save_project_files(result["project_id"], result["files"])
+        return {
+            "project_id": result["project_id"],
+            "saved_to": path,
+            "message": result["message"],
+            "files": list(result["files"].keys())
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
