@@ -1,8 +1,8 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
+# File: backend/routers/planner.py
+
+from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
 from pydantic import BaseModel
 from uuid import uuid4
-import httpx
-import asyncio
 import json
 import logging
 
@@ -10,7 +10,6 @@ from backend.services.planning_agent import plan_project
 from backend.models.status_tracker import set_status, get_status
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
 
 class PlanningRequest(BaseModel):
     goal: str
@@ -26,8 +25,7 @@ def initiate_project(req: PlanningRequest):
             "plan": plan
         }
     except Exception as e:
-        logger.error(f"Error in initiate_project: {e}")
-        raise HTTPException(status_code=500, detail="Failed to initiate project.")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/execute")
 async def execute_project(req: Request, bg: BackgroundTasks):
@@ -51,26 +49,10 @@ async def execute_project(req: Request, bg: BackgroundTasks):
         return {"project_id": project_id, "status": "started", "milestones": milestones}
 
     except HTTPException as http_exc:
-        logger.error(f"HTTPException in execute_project: {http_exc.detail}")
         raise http_exc
     except Exception as e:
-        logger.error(f"Unexpected error in execute_project: {e}")
         raise HTTPException(status_code=500, detail="Internal server error.")
 
 async def run_milestones(project_id: str, milestones: list):
-    async with httpx.AsyncClient() as client:
-        for i, milestone in enumerate(milestones):
-            try:
-                set_status(project_id, "building", f"Milestone {i+1}: {milestone}")
-                res = await client.post(
-                    "https://ai-agent-orchestrator.onrender.com/prompt",
-                    json={"prompt": milestone}
-                )
-                res.raise_for_status()
-                await asyncio.sleep(10)  # pacing
-            except Exception as e:
-                set_status(project_id, "error", f"Failed at milestone {i+1}", {"error": str(e)})
-                logger.error(f"Error in run_milestones at milestone {i+1}: {e}")
-                return
-
-    set_status(project_id, "complete", "All milestones generated")
+    # Implement your milestone execution logic here
+    pass
